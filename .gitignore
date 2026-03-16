@@ -1,3 +1,6 @@
 venv_CCQ1/
 .secrets/
 assets/
+.env
+__pycache__/
+*.pyc
