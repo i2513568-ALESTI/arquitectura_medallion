@@ -1,40 +1,79 @@
-# Y04AN1_BDA_P1
+# SATDPO (Y04AN1_BDA_P1)
 
-ETL pipeline for Supabase (PostgreSQL) using **Medallion architecture**: Bronze → Silver → Gold.
+Pipeline de datos para Supabase (PostgreSQL) usando **arquitectura Medallion**: **Bronze → Silver → Gold**.
 
-## Setup
+- **Silver**: limpieza por dominio (tipos, nulos críticos, validaciones, normalización de columnas).
+- **Gold**: dataset consolidado por `id_asesor` con **KPIs**, **features para ML** y `riesgo` (target) para modelado.
+- **Streamlit**: visor profesional para explorar tablas **silver** y **gold**.
 
-1. **Environment**
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate   # Windows
-   pip install -r requirements.txt
-   ```
+## Requisitos
 
-2. **Config**
-   - Copy `.env.example` to `.env` and set your Supabase credentials (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`).
+- Python 3.10+ (recomendado 3.12)
+- Acceso a una base PostgreSQL/Supabase con schema `bronze` poblado
 
-## Run pipeline
+## Configuración (sin secretos)
 
-From project root:
+1. Copia `.env.example` a `.env`.
+2. Completa tus credenciales de Supabase/PostgreSQL:
+   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+
+Importante:
+- **No subas `.env` a GitHub**. Este repo ya lo ignora en `.gitignore`.
+
+## Instalación local
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+```
+
+## Ejecutar el pipeline (ETL)
+
+Desde la raíz del proyecto:
 
 ```bash
 python run_pipeline.py
 ```
 
-- Loads tables from **bronze** schema.
-- Cleans data into **silver** (dedup, trim strings, nulls).
-- Builds **gold** (aggregations by `id_asesor`).
-- Creates **silver** and **gold** schemas if missing.
-- Writes results with `pandas.to_sql`.
+Qué hace:
+- **Lee Bronze** desde `bronze.*`.
+- **Construye Silver** (limpieza y tipado).
+- **Construye Gold** (`gold.resumen_por_asesor`) con KPIs, features y `riesgo`.
+- Crea schemas `silver` y `gold` si no existen.
+- Escribe resultados en Supabase/PostgreSQL.
 
-## Layout
+## Ejecutar el dashboard (Streamlit)
 
-- `config/` – settings and DB (env, `get_connection`, `get_engine`).
-- `etl/` – `bronze` (load), `silver` (clean), `gold` (aggregate), `pipeline` (orchestrate).
-- `run_pipeline.py` – entry point with logging.
+```bash
+streamlit run app.py
+```
 
-## Notebooks
+Incluye:
+- selector de schema (`silver`/`gold`) y tabla
+- vista previa paginada
+- perfil rápido de nulos
+- panel especial para `gold.resumen_por_asesor` (KPIs y distribución de `riesgo`)
 
-- `notebook/carga_bronze.ipynb` – explore bronze.
-- `notebook/carga_silver_gold.ipynb` – run Silver/Gold in Jupyter.
+## Deploy (Streamlit Community Cloud)
+
+1. Sube este repo a GitHub (sin `.env`).
+2. En Streamlit Cloud, configura:
+   - **Main file path**: `app.py`
+3. En **App settings → Secrets**, agrega tus variables:
+
+```toml
+DB_HOST="..."
+DB_PORT="5432"
+DB_NAME="postgres"
+DB_USER="..."
+DB_PASSWORD="..."
+```
+
+## Estructura del repo
+
+- `config/`: settings y conexión (`get_connection`, `get_engine`).
+- `etl/`: capas Bronze/Silver/Gold y orquestación.
+- `run_pipeline.py`: entrypoint del ETL.
+- `app.py`: dashboard Streamlit.
+- `notebook/`: notebooks de exploración/ejecución.

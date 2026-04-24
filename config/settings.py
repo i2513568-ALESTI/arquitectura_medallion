@@ -17,11 +17,12 @@ else:
     load_dotenv()
 
 # Database (Supabase/PostgreSQL)
-DB_HOST = os.getenv("DB_HOST", "aws-0-us-west-2.pooler.supabase.com")
+# IMPORTANT: never hardcode real credentials in repo defaults.
+DB_HOST = os.getenv("DB_HOST", "")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "postgres")
-DB_USER = os.getenv("DB_USER", "postgres.zuxjvpqgdpprzostfiuf")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "xmatansa123")
+DB_USER = os.getenv("DB_USER", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
 # Schema and table names
 BRONZE_SCHEMA = "bronze"
@@ -58,6 +59,10 @@ class _Settings:
     def get_sqlalchemy_uri(self):
         """Build PostgreSQL URI for SQLAlchemy (password URL-encoded)."""
         from urllib.parse import quote_plus
+        if not self.db_host or not self.db_user or not self.db_password:
+            raise ValueError(
+                "Missing database settings. Ensure DB_HOST, DB_USER, DB_PASSWORD are set in your environment or .env"
+            )
         pwd = quote_plus(self.db_password)
         return (
             f"postgresql://{self.db_user}:{pwd}@{self.db_host}:{self.db_port}/{self.db_name}"
